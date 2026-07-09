@@ -126,7 +126,7 @@ COMMODITIES = {
             "BOQ6": date(2026, 7, 24),
             "BOU6": date(2026, 8, 21),
             "BOV6": date(2026, 9, 25),
-            "BOZ6": date(2027, 11, 20),
+            "BOZ6": date(2026, 11, 20),
             "BOH7": date(2027, 2, 19),
         },
     },
