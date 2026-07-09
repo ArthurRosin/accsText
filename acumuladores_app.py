@@ -128,6 +128,10 @@ COMMODITIES = {
             "BOV6": date(2026, 9, 25),
             "BOZ6": date(2026, 11, 20),
             "BOH7": date(2027, 2, 19),
+            "BOK7": date(2027, 2, 19),
+            "BON7": date(2027, 6, 25),
+            "BOQ7": date(2027, 7, 23),
+            "BOU7": date(2027, 8, 27),
         },
     },
     "Farelo de soja": {
