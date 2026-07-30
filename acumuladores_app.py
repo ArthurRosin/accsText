@@ -79,21 +79,37 @@ def validar_pilares(commodities: dict) -> list[str]:
 
 
 # ── Tipos de acumulador ─────────────────────────────────────────────────────
-# (dobro_diario, dobro_exp, tem_ko, tem_paraquedas, tem_suspensao, tem_acelerador)
+# (dobro_diario, dobro_exp, tem_ko, tem_paraquedas, tem_suspensao, tem_acelerador, tem_protecao)
 TIPOS_ACC = {
-    "ACC com dobro diário e KO":                                  (True,  False, True,  False, False, False),
-    "ACC sem dobro e com KO":                                     (False, False, True,  False, False, False),
-    "ACC com dobro na expiração e KO":                            (False, True,  True,  False, False, False),
-    "ACC com dobro diário, KO e paraquedas":                      (True,  False, True,  True,  False, False),
-    "ACC sem dobro, com KO e paraquedas":                         (False, False, True,  True,  False, False),
-    "ACC com dobro na expiração, KO e paraquedas":                (False, True,  True,  True,  False, False),
-    "ACC com dobro diário e Suspensão":                           (True,  False, False, False, True,  False),
-    "ACC sem dobro e com Suspensão":                              (False, False, False, False, True,  False),
-    "ACC com dobro na expiração e Suspensão":                     (False, True,  False, False, True,  False),
-    "ACC com dobro diário, Acelerador e KO":                      (True,  False, True,  False, False, True),
-    "ACC com dobro na expiração, Acelerador e KO":                (False, True,  True,  False, False, True),
-    "ACC com dobro diário, Acelerador, KO e Paraquedas":          (True,  False, True,  True,  False, True),
-    "ACC com dobro na expiração, Acelerador, KO e Paraquedas":    (False, True,  True,  True,  False, True),
+    "ACC com dobro diário e KO":                                  (True,  False, True,  False, False, False, False),
+    "ACC sem dobro e com KO":                                     (False, False, True,  False, False, False, False),
+    "ACC com dobro na expiração e KO":                            (False, True,  True,  False, False, False, False),
+
+    "ACC com dobro diário, KO e paraquedas":                      (True,  False, True,  True,  False, False, False),
+    "ACC sem dobro, com KO e paraquedas":                         (False, False, True,  True,  False, False, False),
+    "ACC com dobro na expiração, KO e paraquedas":                (False, True,  True,  True,  False, False, False),
+
+    "ACC com dobro diário e Suspensão":                           (True,  False, False, False, True,  False, False),
+    "ACC sem dobro e com Suspensão":                              (False, False, False, False, True,  False, False),
+    "ACC com dobro na expiração e Suspensão":                     (False, True,  False, False, True,  False, False),
+
+    "ACC com dobro diário, Acelerador e KO":                      (True,  False, True,  False, False, True, False),
+    "ACC com dobro na expiração, Acelerador e KO":                (False, True,  True,  False, False, True, False),
+
+    "ACC com dobro diário, Acelerador, KO e Paraquedas":          (True, False, True, True, False, True, False),
+    "ACC com dobro na expiração, Acelerador, KO e Paraquedas":    (False, True, True, True, False, True, False),
+
+    "ACC com dobro diário, Acelerador e Suspensão":               (True, False, False, False, True, True, False),
+    "ACC com dobro na expiração, Acelerador e Suspensão":         (False, True, False, False, True, True, False),
+    
+    "ACC com dobro diário, KO e Proteção de Dobro":               (True, False, True, False, False, False, True),
+    "ACC com dobro na expiração, KO e Proteção de Dobro":         (False, True, True, False, False, False, True),
+    "ACC com dobro diário, Suspensão e Proteção de Dobro":        (True, False, False, False, True, False, True),
+    "ACC com dobro diário, Paraquedas, KO e Proteção de Dobro":   (True, False, True, True, False, False, True),
+
+    "ACC com dobro diário, Acelerador, KO e Proteção de Dobro":   (True, False, True, False, False, True, True),
+
+
 }
 
 
@@ -119,11 +135,12 @@ def gerar_texto(
     nivel_paraquedas: float | None,
     nivel_suspensao: float | None,
     nivel_acelerador: float | None,
+    nivel_protecao: float | None,
     modo: str = "Cotação",
     lotes: float | None = None,
 ) -> str:
 
-    dobro_diario, dobro_exp, tem_ko, tem_par, tem_sus, tem_acel = TIPOS_ACC[opcao]
+    dobro_diario, dobro_exp, tem_ko, tem_par, tem_sus, tem_acel, tem_prot = TIPOS_ACC[opcao]
 
     op       = tipo_operacao
     op_lower = op.lower()
@@ -173,6 +190,8 @@ def gerar_texto(
         linhas.append(f"Nível de Paraquedas @ {nivel_paraquedas} {u}")
     if tem_sus:
         linhas.append(f"Nível de Suspensão @ {nivel_suspensao} {u}")
+    if tem_prot:
+        linhas.append(f"Nível de Proteção de dobro @ {nivel_protecao} {u}")
     linhas.append("")
 
     # ── Regras diárias
@@ -190,12 +209,27 @@ def gerar_texto(
         )
 
     # Lado desfavorável ao cliente — dispara o dobro (2x) ou a acumulação normal (1x)
-    multiplicador = "2x" if dobro_diario else "1x"
-    sufixo_multi   = sufixo_2x if dobro_diario else sufixo_1x
-    linhas.append(
-        f"- Todo dia em que o mercado fechar a {nivel_melhorado} {u} ou {lado_desfavoravel}, "
-        f"{op_lower} {multiplicador}{sufixo_multi} o volume diário a {nivel_melhorado} {u}."
-    )
+    if not tem_prot:
+        multiplicador = "2x" if dobro_diario else "1x"
+        sufixo_multi   = sufixo_2x if dobro_diario else sufixo_1x
+        linhas.append(
+            f"- Todo dia em que o mercado fechar a {nivel_melhorado} {u} ou {lado_desfavoravel}, "
+            f"{op_lower} {multiplicador}{sufixo_multi} o volume diário a {nivel_melhorado} {u}."
+        )
+    else:
+        multiplicador = "1x"
+        sufixo_multi   = sufixo_1x
+        linhas.append(
+            f"- Todo dia em que o mercado fechar entre {nivel_melhorado} e {nivel_protecao} {u}, "
+            f"{op_lower} {multiplicador}{sufixo_multi} o volume diário a {nivel_melhorado} {u}."
+        )
+
+    # ── Proteção de dobro ────────────────────────────────────────────────────────
+    if tem_prot:
+            linhas.append(
+                f"- Todo dia em que o mercado fechar a {nivel_protecao} {u} ou {lado_desfavoravel}, "
+                f"{op_lower} 2x{sufixo_2x} o volume diário a {nivel_melhorado} {u}."
+            )
 
     # ── Knock Out ────────────────────────────────────────────────────────
     if tem_ko:
@@ -216,6 +250,7 @@ def gerar_texto(
             f"- Se em algum pregão o mercado fechar a {nivel_suspensao} {u} ou {lado_cap}, "
             f"nada é acumulado naquele pregão, mas a estrutura não desmonta."
         )
+
 
     # ── Dobro na expiração ───────────────────────────────────────────────
     if dobro_exp and tem_sus:
@@ -274,12 +309,13 @@ preco_base      = st.number_input(f"Referência ({unidade}):", min_value=0.0)
 nivel_melhorado = st.number_input(f"Nível melhorado ({unidade}):", min_value=0.0)
 
 # ── Inputs condicionais
-dobro_diario, dobro_exp, tem_ko, tem_par, tem_sus, tem_acel = TIPOS_ACC[opcao]
+dobro_diario, dobro_exp, tem_ko, tem_par, tem_sus, tem_acel, tem_prot = TIPOS_ACC[opcao]
 
 nivel_ko         = st.number_input(f"Nível de Knock Out ({unidade}):",  value=0.0, min_value=0.0) if tem_ko  else None
 nivel_paraquedas = st.number_input(f"Nível de Paraquedas ({unidade}):", value=0.0, min_value=0.0) if tem_par else None
 nivel_suspensao  = st.number_input(f"Nível de Suspensão ({unidade}):",  value=0.0, min_value=0.0) if tem_sus else None
 nivel_acelerador = st.number_input(f"Nível do Acelerador ({unidade}):", value=0.0, min_value=0.0) if tem_acel else None
+nivel_protecao   = st.number_input(f"Nível de Proteção de Dobro ({unidade}):", value=0.0, min_value=0.0) if tem_prot else None
 
 # ── Geração
 if st.button("Gerar Texto"):
@@ -297,6 +333,7 @@ if st.button("Gerar Texto"):
         nivel_paraquedas=nivel_paraquedas,
         nivel_suspensao=nivel_suspensao,
         nivel_acelerador=nivel_acelerador,
+        nivel_protecao=nivel_protecao,
         modo=modo,
         lotes=lotes,
     )
