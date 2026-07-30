@@ -2,153 +2,83 @@ import streamlit as st
 import pandas as pd
 from pandas.tseries.offsets import CustomBusinessDay
 from datetime import date
+from pathlib import Path
 
-# ── Calendários de feriados ─────────────────────────────────────────────────
-# Feriados Brasil e EUA (CBOT e B3 fechadas)
-FERIADOS_COMUNS = [
-    date(2026, 2, 16),   # Carnaval / Presidents Day
-    date(2026, 4, 3),    # Sexta-Feira Santa
-    date(2026, 9, 7),    # Labor Day / Independência do Brasil
-    date(2026, 12, 25),  # Natal
-    date(2027, 1, 1),    # Ano Novo
-    date(2027, 3, 26),   # Sexta-Feira Santa 2027
-]
+DADOS = Path(__file__).parent / "dados"
 
-# Feriados EUA (apenas CBOT fechada)
-FERIADOS_CBOT = FERIADOS_COMUNS + [
-    # 2026
-    date(2026, 5, 25),   # Memorial Day
-    date(2026, 6, 19),   # Juneteenth Day
-    date(2026, 7, 3),    # Independence Day (observado)
-    date(2026, 11, 26),  # Thanksgiving
-    # 2027
-    date(2027, 1, 18),   # MLK Day
-    date(2027, 2, 15),   # Presidents Day
-    date(2027, 5, 31),   # Memorial Day
-    date(2027, 6, 18),   # Juneteenth (observado, 19/6 = sáb)
-    date(2027, 7, 5),    # Independence Day (observado, 4/7 = dom)
-    date(2027, 9, 6),    # Labor Day
-    date(2027, 11, 25),  # Thanksgiving
-    date(2027, 12, 24),  # Natal (observado, 25/12 = sáb)
-    # 2028 (até os pilares mais longos)
-    date(2028, 1, 17),   # MLK Day
-    date(2028, 2, 21),   # Presidents Day
-    date(2028, 4, 14),   # Sexta-Feira Santa 2028
-]
+# ── Carregamento da base de dados (CSV) ─────────────────────────────────────
+@st.cache_data
+def carregar_feriados() -> pd.DataFrame:
+    df = pd.read_csv(DADOS / "feriados.csv", parse_dates=["data"])
+    df["data"] = df["data"].dt.date
+    return df
 
-# Feriados Brasil (apenas B3 fechada)
-# Obs.: 18/02/2026 (Quarta de Cinzas) a B3 abre ao meio-dia — contado como pregão.
-FERIADOS_B3 = FERIADOS_COMUNS + [
-    # 2026
-    date(2026, 2, 17),   # Carnaval
-    date(2026, 4, 21),   # Tiradentes
-    date(2026, 5, 1),    # Dia do Trabalhador
-    date(2026, 6, 4),    # Corpus Christi
-    date(2026, 10, 12),  # N. Sra. Aparecida / Dia das Crianças
-    date(2026, 11, 2),   # Finados
-    date(2026, 11, 20),  # Consciência Negra
-    date(2026, 12, 24),  # Véspera de Natal — B3 não abre
-    date(2026, 12, 31),  # Véspera de Ano Novo — B3 não abre
-    # 2027
-    date(2027, 2, 8),    # Carnaval (seg)
-    date(2027, 2, 9),    # Carnaval (ter)
-    date(2027, 4, 21),   # Tiradentes
-    date(2027, 5, 27),   # Corpus Christi
-    date(2027, 9, 7),    # Independência
-    date(2027, 10, 12),  # N. Sra. Aparecida
-    date(2027, 11, 2),   # Finados
-    date(2027, 11, 15),  # Proclamação da República (cai em segunda em 2027)
-    date(2027, 12, 24),  # Véspera de Natal — B3 não abre
-    date(2027, 12, 31),  # Véspera de Ano Novo — B3 não abre
-]
 
-bday_cbot = CustomBusinessDay(holidays=FERIADOS_CBOT)
-bday_b3   = CustomBusinessDay(holidays=FERIADOS_B3)
+@st.cache_data
+def carregar_commodities() -> pd.DataFrame:
+    return pd.read_csv(DADOS / "commodities.csv")
 
-# ── Pilares por commodity ───────────────────────────────────────────────────
-COMMODITIES = {
-    "Soja": {
-        "unidade": "c/bu",
-        "calendario": bday_cbot,
-        "pilares": {
-            "SQ6": date(2026, 7, 24),
-            "SU6": date(2026, 8, 21),
-            "SX6": date(2026, 10, 23),
-            "SF7": date(2026, 12, 24),
-            "SH7": date(2027, 2, 19),
-            "SK7": date(2027, 4, 23),
-            "SN7": date(2027, 6, 25),
-            "SX7": date(2027, 10, 22),
-        },
-    },
-    "Milho CBOT": {
-        "unidade": "c/bu",
-        "calendario": bday_cbot,
-        "pilares": {
-            "CU6": date(2026, 8, 21),
-            "CZ6": date(2026, 11, 20),
-            "CH7": date(2027, 2, 19),
-            "CK7": date(2027, 4, 23),
-            "CN7": date(2027, 6, 25),
-            "CU7": date(2027, 8, 27),
-            "CZ7": date(2027, 11, 26),
-        },
-    },
-    "Milho B3": {
-        "unidade": "R$/sc",
-        "calendario": bday_b3,
-        "pilares": {
-            "CCMU6": date(2026, 9, 14),
-            "CCMX6": date(2026, 11, 16),
-            "CCMF7": date(2027, 1, 15),
-            "CCMU7": date(2027, 9, 14),
-        },
-    },
-    "Algodão": {
-        "unidade": "c/lb",
-        "calendario": bday_cbot,
-        "pilares": {
-            "CTV6": date(2026, 9, 11),
-            "CTZ6": date(2026, 11, 13),
-            "CTH7": date(2027, 2, 5),
-            "CTK7": date(2027, 4, 16),
-            "CTN7": date(2027, 6, 11),
-            "CTV7": date(2027, 9, 10),
-            "CTZ7": date(2027, 12, 11),
-            "CTH8": date(2028, 2, 11),
-            "CTK8": date(2028, 4, 13),
-        },
-    },
-    "Óleo de soja": {
-        "unidade": "c/lb",
-        "calendario": bday_cbot,
-        "pilares": {
-            "BOQ6": date(2026, 7, 24),
-            "BOU6": date(2026, 8, 21),
-            "BOV6": date(2026, 9, 25),
-            "BOZ6": date(2026, 11, 20),
-            "BOH7": date(2027, 2, 19),
-            "BOK7": date(2027, 2, 19),
-            "BON7": date(2027, 6, 25),
-            "BOQ7": date(2027, 7, 23),
-            "BOU7": date(2027, 8, 27),
-        },
-    },
-    "Farelo de soja": {
-        "unidade": "US$/sTON",
-        "calendario": bday_cbot,
-        "pilares": {
-            "SMQ6": date(2026, 7, 24),
-            "SMU6": date(2026, 8, 21),
-            "SMV6": date(2026, 9, 25),
-            "SMZ6": date(2027, 11, 20),
-            "SMF7": date(2026, 12, 24),
-            "SMH7": date(2027, 2, 19),
-            "SMK7": date(2027, 4, 23),
-        },
-    },
-}
 
+@st.cache_data
+def carregar_pilares() -> pd.DataFrame:
+    df = pd.read_csv(DADOS / "pilares.csv", parse_dates=["vencimento"])
+    df["vencimento"] = df["vencimento"].dt.date
+    return df
+
+
+@st.cache_data
+def construir_calendarios() -> dict[str, CustomBusinessDay]:
+    """Monta os CustomBusinessDay de cada mercado a partir de feriados.csv.
+    'AMBOS' entra tanto no calendário CBOT quanto no B3."""
+    fer = carregar_feriados()
+    cbot = fer.loc[fer["mercado"].isin(["CBOT", "AMBOS"]), "data"].tolist()
+    b3   = fer.loc[fer["mercado"].isin(["B3",   "AMBOS"]), "data"].tolist()
+    return {
+        "cbot": CustomBusinessDay(holidays=cbot),
+        "b3":   CustomBusinessDay(holidays=b3),
+    }
+
+
+@st.cache_data
+def construir_commodities() -> dict:
+    """Recria a estrutura COMMODITIES a partir das três CSVs."""
+    calendarios = construir_calendarios()
+    df_com = carregar_commodities()
+    df_pil = carregar_pilares()
+
+    out = {}
+    for _, row in df_com.iterrows():
+        nome = row["commodity"]
+        pilares = (
+            df_pil[df_pil["commodity"] == nome]
+            .set_index("pilar")["vencimento"]
+            .to_dict()
+        )
+        out[nome] = {
+            "unidade": row["unidade"],
+            "calendario": calendarios[row["calendario"]],
+            "cod_calendario": row["calendario"],
+            "pilares": pilares,
+        }
+    return out
+
+
+def validar_pilares(commodities: dict) -> list[str]:
+    """Retorna avisos para todo pilar que caia em fim de semana ou feriado —
+    ou seja, num dia que não seja pregão no seu próprio calendário."""
+    avisos = []
+    for nome, info in commodities.items():
+        cal = info["calendario"]
+        for pilar, venc in info["pilares"].items():
+            # Um dia é pregão se date_range(venc, venc) o inclui.
+            eh_pregao = len(pd.date_range(start=venc, end=venc, freq=cal)) == 1
+            if not eh_pregao:
+                dia = venc.strftime("%A")
+                avisos.append(f"{nome} · {pilar} → {venc} ({dia}) não é pregão")
+    return avisos
+
+
+# ── Tipos de acumulador ─────────────────────────────────────────────────────
 # (dobro_diario, dobro_exp, tem_ko, tem_paraquedas, tem_suspensao, tem_acelerador)
 TIPOS_ACC = {
     "ACC com dobro diário e KO":                                  (True,  False, True,  False, False, False),
@@ -246,7 +176,6 @@ def gerar_texto(
     linhas.append("")
 
     # ── Regras diárias
-
     if tem_acel:
         preco_normal = preco_acel
     else:
@@ -304,17 +233,24 @@ def gerar_texto(
     return "\n".join(linhas)
 
 
-# ── UI
+# ── UI ──────────────────────────────────────────────────────────────────────
 st.title("Gerador de Acumuladores")
+
+COMMODITIES = construir_commodities()
+
+# Health-check da base: avisa se algum pilar cai fora de pregão
+avisos = validar_pilares(COMMODITIES)
+if avisos:
+    with st.expander(f"⚠️ {len(avisos)} pilar(es) com data suspeita", expanded=True):
+        for a in avisos:
+            st.warning(a)
 
 modo = st.radio("Modo:", ["Cotação", "Confirmação de ordem"], horizontal=True)
 
-# Quantidade de lotes — só aparece em modo Confirmação
 lotes = None
 if modo == "Confirmação de ordem":
     lotes = st.number_input("Quantidade de lotes:", min_value=1.0, value=10.0, step=1.0)
 
-# Commodity
 commodity = st.selectbox("Commodity:", list(COMMODITIES.keys()))
 info_commodity = COMMODITIES[commodity]
 unidade = info_commodity["unidade"]
@@ -344,11 +280,6 @@ nivel_ko         = st.number_input(f"Nível de Knock Out ({unidade}):",  value=0
 nivel_paraquedas = st.number_input(f"Nível de Paraquedas ({unidade}):", value=0.0, min_value=0.0) if tem_par else None
 nivel_suspensao  = st.number_input(f"Nível de Suspensão ({unidade}):",  value=0.0, min_value=0.0) if tem_sus else None
 nivel_acelerador = st.number_input(f"Nível do Acelerador ({unidade}):", value=0.0, min_value=0.0) if tem_acel else None
-
-if tem_ko and nivel_ko is None: nivel_ko = 0.0
-if tem_par and nivel_paraquedas is None: nivel_paraquedas = 0.0
-if tem_sus and nivel_suspensao is None: nivel_suspensao = 0.0
-if tem_acel and nivel_acelerador is None: nivel_acelerador = 0.0
 
 # ── Geração
 if st.button("Gerar Texto"):
