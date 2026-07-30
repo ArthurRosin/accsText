@@ -1,0 +1,77 @@
+data,mercado,descricao
+2026-02-16,AMBOS,Carnaval / Presidents Day
+2026-02-17,B3,Carnaval
+2026-04-03,AMBOS,Sexta-Feira Santa
+2026-04-21,B3,Tiradentes
+2026-05-01,B3,Dia do Trabalhador
+2026-05-25,CBOT,Memorial Day
+2026-06-04,B3,Corpus Christi
+2026-06-19,CBOT,Juneteenth
+2026-07-03,CBOT,Independence Day (obs)
+2026-09-07,AMBOS,Labor Day / Independência do Brasil
+2026-10-12,B3,N. Sra. Aparecida
+2026-11-02,B3,Finados
+2026-11-20,,Consciência Negra Desconsiderando pois no pricing tool parace não considerar
+2026-11-26,CBOT,Thanksgiving
+2026-12-25,AMBOS,Natal
+2027-01-01,AMBOS,Ano Novo
+2027-01-18,CBOT,MLK Day
+2027-02-08,B3,Carnaval
+2027-02-09,B3,Carnaval
+2027-02-15,CBOT,Presidents Day
+2027-03-26,AMBOS,Sexta-Feira Santa
+2027-04-21,B3,Tiradentes
+2027-05-27,B3,Corpus Christi
+2027-05-31,CBOT,Memorial Day
+2027-06-18,CBOT,Juneteenth (obs)
+2027-07-05,CBOT,Independence Day (obs)
+2027-09-06,CBOT,Labor Day
+2027-09-07,B3,Independência
+2027-10-12,B3,N. Sra. Aparecida
+2027-11-02,B3,Finados
+2027-11-15,B3,Proclamação da República
+2027-11-25,CBOT,Thanksgiving
+2027-12-24,B3,Véspera de Natal
+2027-12-24,CBOT,Natal (obs)
+2027-12-31,B3,Véspera de Ano Novo
+2027-12-31,CBOT,Véspera de Ano Novo (obs)
+2028-01-17,CBOT,MLK Day
+2028-02-21,CBOT,Presidents Day
+2028-02-28,B3,Carnaval
+2028-02-29,B3,Carnaval
+2028-04-14,AMBOS,Sexta-Feira Santa
+2028-04-21,B3,Tiradentes
+2028-05-01,B3,Dia do Trabalhador
+2028-05-29,CBOT,Memorial Day
+2028-06-15,B3,Corpus Christi
+2028-06-19,CBOT,Juneteenth
+2028-07-04,CBOT,Independence Day
+2028-09-04,CBOT,Labor Day
+2028-09-07,B3,Independência
+2028-10-12,B3,N. Sra. Aparecida
+2028-11-02,B3,Finados
+2028-11-15,B3,Proclamação da República
+2028-11-20,B3,Consciência Negra
+2028-11-23,CBOT,Thanksgiving
+2028-12-25,AMBOS,Natal
+2029-01-01,AMBOS,Ano Novo
+2029-01-15,CBOT,MLK Day
+2029-02-12,B3,Carnaval
+2029-02-13,B3,Carnaval
+2029-02-19,CBOT,Presidents Day
+2029-03-30,AMBOS,Sexta-Feira Santa
+2029-05-01,B3,Dia do Trabalhador
+2029-05-28,CBOT,Memorial Day
+2029-05-31,B3,Corpus Christi
+2029-06-19,CBOT,Juneteenth
+2029-07-04,CBOT,Independence Day
+2029-09-03,CBOT,Labor Day
+2029-09-07,B3,Independência
+2029-10-12,B3,N. Sra. Aparecida
+2029-11-02,B3,Finados
+2029-11-15,B3,Proclamação da República
+2029-11-20,B3,Consciência Negra
+2029-11-22,CBOT,Thanksgiving
+2029-12-24,B3,Véspera de Natal
+2029-12-25,AMBOS,Natal
+2029-12-31,B3,Véspera de Ano Novo
