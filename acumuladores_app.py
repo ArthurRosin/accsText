@@ -81,34 +81,35 @@ def validar_pilares(commodities: dict) -> list[str]:
 # ── Tipos de acumulador ─────────────────────────────────────────────────────
 # (dobro_diario, dobro_exp, tem_ko, tem_paraquedas, tem_suspensao, tem_acelerador, tem_protecao)
 TIPOS_ACC = {
-    "ACC com dobro diário e KO":                                  (True,  False, True,  False, False, False, False),
-    "ACC sem dobro e com KO":                                     (False, False, True,  False, False, False, False),
-    "ACC com dobro na expiração e KO":                            (False, True,  True,  False, False, False, False),
+    "ACC com dobro diário e KO":                                              (True,  False, True,  False, False, False, False),
+    "ACC sem dobro e com KO":                                                 (False, False, True,  False, False, False, False),
+    "ACC com dobro na expiração e KO":                                        (False, True,  True,  False, False, False, False),
 
-    "ACC com dobro diário, KO e paraquedas":                      (True,  False, True,  True,  False, False, False),
-    "ACC sem dobro, com KO e paraquedas":                         (False, False, True,  True,  False, False, False),
-    "ACC com dobro na expiração, KO e paraquedas":                (False, True,  True,  True,  False, False, False),
+    "ACC com dobro diário, KO e paraquedas":                                  (True,  False, True,  True,  False, False, False),
+    "ACC sem dobro, com KO e paraquedas":                                     (False, False, True,  True,  False, False, False),
+    "ACC com dobro na expiração, KO e paraquedas":                            (False, True,  True,  True,  False, False, False),
 
-    "ACC com dobro diário e Suspensão":                           (True,  False, False, False, True,  False, False),
-    "ACC sem dobro e com Suspensão":                              (False, False, False, False, True,  False, False),
-    "ACC com dobro na expiração e Suspensão":                     (False, True,  False, False, True,  False, False),
+    "ACC com dobro diário e Suspensão":                                       (True,  False, False, False, True,  False, False),
+    "ACC sem dobro e com Suspensão":                                          (False, False, False, False, True,  False, False),
+    "ACC com dobro na expiração e Suspensão":                                 (False, True,  False, False, True,  False, False),
 
-    "ACC com dobro diário, Acelerador e KO":                      (True,  False, True,  False, False, True, False),
-    "ACC com dobro na expiração, Acelerador e KO":                (False, True,  True,  False, False, True, False),
+    "ACC com dobro diário, Acelerador e KO":                                  (True,  False, True,  False, False, True, False),
+    "ACC com dobro na expiração, Acelerador e KO":                            (False, True,  True,  False, False, True, False),
 
-    "ACC com dobro diário, Acelerador, KO e Paraquedas":          (True, False, True, True, False, True, False),
-    "ACC com dobro na expiração, Acelerador, KO e Paraquedas":    (False, True, True, True, False, True, False),
+    "ACC com dobro diário, Acelerador, KO e Paraquedas":                      (True, False, True, True, False, True, False),
+    "ACC com dobro na expiração, Acelerador, KO e Paraquedas":                (False, True, True, True, False, True, False),
 
-    "ACC com dobro diário, Acelerador e Suspensão":               (True, False, False, False, True, True, False),
-    "ACC com dobro na expiração, Acelerador e Suspensão":         (False, True, False, False, True, True, False),
+    "ACC com dobro diário, Acelerador e Suspensão":                           (True, False, False, False, True, True, False),
+    "ACC com dobro na expiração, Acelerador e Suspensão":                     (False, True, False, False, True, True, False),
     
-    "ACC com dobro diário, KO e Proteção de Dobro":               (True, False, True, False, False, False, True),
-    "ACC com dobro na expiração, KO e Proteção de Dobro":         (False, True, True, False, False, False, True),
-    "ACC com dobro diário, Suspensão e Proteção de Dobro":        (True, False, False, False, True, False, True),
-    "ACC com dobro diário, Paraquedas, KO e Proteção de Dobro":   (True, False, True, True, False, False, True),
+    "ACC com dobro diário, KO e Proteção de Dobro":                           (True, False, True, False, False, False, True),
+    "ACC com dobro na expiração, KO e Proteção de Dobro":                     (False, True, True, False, False, False, True),
+    "ACC com dobro diário, Suspensão e Proteção de Dobro":                    (True, False, False, False, True, False, True),
+    "ACC com dobro diário, Paraquedas, KO e Proteção de Dobro":               (True, False, True, True, False, False, True),
 
-    "ACC com dobro diário, Acelerador, KO e Proteção de Dobro":   (True, False, True, False, False, True, True),
-
+    "ACC com dobro diário, Acelerador, KO e Proteção de Dobro":               (True, False, True, False, False, True, True),
+    "ACC com dobro diário, Acelerador, KO, Paraquedas e Proteção de Dobro":   (True, False, True, True, False, True, True),
+    "ACC com dobro diário, Acelerador, KO, Suspensão e Proteção de Dobro":    (True, False, True, False, True, True, True),
 
 }
 
