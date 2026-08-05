@@ -109,7 +109,7 @@ TIPOS_ACC = {
 
     "ACC com dobro diário, Acelerador, KO e Proteção de Dobro":               (True, False, True, False, False, True, True),
     "ACC com dobro diário, Acelerador, KO, Paraquedas e Proteção de Dobro":   (True, False, True, True, False, True, True),
-    "ACC com dobro diário, Acelerador, KO, Suspensão e Proteção de Dobro":    (True, False, True, False, True, True, True),
+    "ACC com dobro diário, Acelerador, Suspensão e Proteção de Dobro":        (True, False, True, False, True, True, True),
 
 }
 
@@ -269,6 +269,41 @@ def gerar_texto(
     return "\n".join(linhas)
 
 
+# ── Gerador de texto da cotação de opções ────────────────────────────────────
+def gerar_cotacao(
+    legs: pd.DataFrame,
+    futures_ref: float,
+    spot_ref: float,
+    custo_cbu: float,
+    preco_final: float,
+    rs_saca: float,
+    tipo_preco: str = "Custo",
+    rotulo: str = "Compo",
+) -> str:
+    # Maturidade do cabeçalho: pega a(s) do(s) leg(s), sem repetir
+    mats = list(dict.fromkeys(legs["Maturity"].tolist()))
+    mat_header = " / ".join(mats)
+
+    linhas = [f"{mat_header} @ {futures_ref:.2f} / Spot ref. {spot_ref:.4f}", ""]
+
+    for _, row in legs.iterrows():
+        acao = "Compra de" if row["Buy/Sell"] == "Buy" else "Venda de"
+        linhas.append(
+            f"{acao} {rotulo} {row['Call/Put']} {row['Maturity']} @{row['Strike [BRL]']:.2f}"
+        )
+
+    linhas.append("")
+
+    rotulo_custo = "Custo de" if tipo_preco == "Custo" else "Crédito de"
+    linhas.append(
+        f"{rotulo_custo} {custo_cbu:.2f} c/bu = "
+        f"{preco_final:,.2f} US$/contrato = "
+        f"{rs_saca:.2f} R$/Saca"
+    )
+
+    return "\n".join(linhas)
+
+
 # ── UI ──────────────────────────────────────────────────────────────────────
 st.title("Gerador de Acumuladores")
 
@@ -281,63 +316,147 @@ if avisos:
         for a in avisos:
             st.warning(a)
 
-modo = st.radio("Modo:", ["Cotação", "Confirmação de ordem"], horizontal=True)
+# ── Abas ─────────────────────────────────────────────────────────────────────
+tab_gerador, tab_calc = st.tabs(["Gerador de Texto", "Calculadora"])
 
-lotes = None
-if modo == "Confirmação de ordem":
-    lotes = st.number_input("Quantidade de lotes:", min_value=1.0, value=10.0, step=1.0)
+# ═════════════════════════════════════════════════════════════════════════════
+# ABA 1 — GERADOR DE TEXTO
+# ═════════════════════════════════════════════════════════════════════════════
+with tab_gerador:
+    modo = st.radio("Modo:", ["Cotação", "Confirmação de ordem"], horizontal=True)
 
-commodity = st.selectbox("Commodity:", list(COMMODITIES.keys()))
-info_commodity = COMMODITIES[commodity]
-unidade = info_commodity["unidade"]
-pilares = info_commodity["pilares"]
-calendario = info_commodity["calendario"]
+    lotes = None
+    if modo == "Confirmação de ordem":
+        lotes = st.number_input("Quantidade de lotes:", min_value=1.0, value=10.0, step=1.0)
 
-st.subheader("Escolha o tipo de acumulador")
-opcao = st.selectbox("Tipo:", list(TIPOS_ACC.keys()))
-st.divider()
+    commodity = st.selectbox("Commodity:", list(COMMODITIES.keys()))
+    info_commodity = COMMODITIES[commodity]
+    unidade = info_commodity["unidade"]
+    pilares = info_commodity["pilares"]
+    calendario = info_commodity["calendario"]
 
-tipo_operacao = st.radio("Compra ou Venda?", ["Compra", "Venda"])
-
-pilar = st.selectbox("Pilar:", list(pilares.keys()))
-vencimento = pilares[pilar]
-hoje = date.today()
-pregoes = contar_pregoes(hoje, vencimento, calendario)
-st.write(f"Vencimento: {vencimento}")
-st.write(f"Número de pregões: {pregoes}")
-
-preco_base      = st.number_input(f"Referência ({unidade}):", min_value=0.0)
-nivel_melhorado = st.number_input(f"Nível melhorado ({unidade}):", min_value=0.0)
-
-# ── Inputs condicionais
-dobro_diario, dobro_exp, tem_ko, tem_par, tem_sus, tem_acel, tem_prot = TIPOS_ACC[opcao]
-
-nivel_ko         = st.number_input(f"Nível de Knock Out ({unidade}):",  value=0.0, min_value=0.0) if tem_ko  else None
-nivel_paraquedas = st.number_input(f"Nível de Paraquedas ({unidade}):", value=0.0, min_value=0.0) if tem_par else None
-nivel_suspensao  = st.number_input(f"Nível de Suspensão ({unidade}):",  value=0.0, min_value=0.0) if tem_sus else None
-nivel_acelerador = st.number_input(f"Nível do Acelerador ({unidade}):", value=0.0, min_value=0.0) if tem_acel else None
-nivel_protecao   = st.number_input(f"Nível de Proteção de Dobro ({unidade}):", value=0.0, min_value=0.0) if tem_prot else None
-
-# ── Geração
-if st.button("Gerar Texto"):
-    texto = gerar_texto(
-        opcao=opcao,
-        tipo_operacao=tipo_operacao,
-        commodity=commodity,
-        pilar=pilar,
-        vencimento=vencimento,
-        pregoes=pregoes,
-        preco_base=preco_base,
-        nivel_melhorado=nivel_melhorado,
-        unidade=unidade,
-        nivel_ko=nivel_ko,
-        nivel_paraquedas=nivel_paraquedas,
-        nivel_suspensao=nivel_suspensao,
-        nivel_acelerador=nivel_acelerador,
-        nivel_protecao=nivel_protecao,
-        modo=modo,
-        lotes=lotes,
-    )
-    st.markdown(texto.replace("$", r"\$"))
+    st.subheader("Escolha o tipo de acumulador")
+    opcao = st.selectbox("Tipo:", list(TIPOS_ACC.keys()))
     st.divider()
-    st.text_area("Copiar texto:", texto, height=300)
+
+    tipo_operacao = st.radio("Compra ou Venda?", ["Compra", "Venda"])
+
+    pilar = st.selectbox("Pilar:", list(pilares.keys()))
+    vencimento = pilares[pilar]
+    hoje = date.today()
+    pregoes = contar_pregoes(hoje, vencimento, calendario)
+    st.write(f"Vencimento: {vencimento}")
+    st.write(f"Número de pregões: {pregoes}")
+
+    preco_base      = st.number_input(f"Referência ({unidade}):", min_value=0.0)
+    nivel_melhorado = st.number_input(f"Nível melhorado ({unidade}):", min_value=0.0)
+
+    # ── Inputs condicionais
+    dobro_diario, dobro_exp, tem_ko, tem_par, tem_sus, tem_acel, tem_prot = TIPOS_ACC[opcao]
+
+    nivel_ko         = st.number_input(f"Nível de Knock Out ({unidade}):",  value=0.0, min_value=0.0) if tem_ko  else None
+    nivel_paraquedas = st.number_input(f"Nível de Paraquedas ({unidade}):", value=0.0, min_value=0.0) if tem_par else None
+    nivel_suspensao  = st.number_input(f"Nível de Suspensão ({unidade}):",  value=0.0, min_value=0.0) if tem_sus else None
+    nivel_acelerador = st.number_input(f"Nível do Acelerador ({unidade}):", value=0.0, min_value=0.0) if tem_acel else None
+    nivel_protecao   = st.number_input(f"Nível de Proteção de Dobro ({unidade}):", value=0.0, min_value=0.0) if tem_prot else None
+
+    # ── Geração
+    if st.button("Gerar Texto"):
+        texto = gerar_texto(
+            opcao=opcao,
+            tipo_operacao=tipo_operacao,
+            commodity=commodity,
+            pilar=pilar,
+            vencimento=vencimento,
+            pregoes=pregoes,
+            preco_base=preco_base,
+            nivel_melhorado=nivel_melhorado,
+            unidade=unidade,
+            nivel_ko=nivel_ko,
+            nivel_paraquedas=nivel_paraquedas,
+            nivel_suspensao=nivel_suspensao,
+            nivel_acelerador=nivel_acelerador,
+            nivel_protecao=nivel_protecao,
+            modo=modo,
+            lotes=lotes,
+        )
+        st.markdown(texto.replace("$", r"\$"))
+        st.divider()
+        st.text_area("Copiar texto:", texto, height=300)
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ABA 2 — CALCULADORA (Cotação de Opções)
+# ═════════════════════════════════════════════════════════════════════════════
+with tab_calc:
+    st.header("Cotação de Opções")
+
+    c1, c2 = st.columns(2)
+    futures_ref = c1.number_input("Futuro (ref)", value=0.0, step=0.01,
+                                  format="%.2f", key="opc_fut")
+    spot_ref    = c2.number_input("Spot ref (USD/BRL)", value=0.0, step=0.0001,
+                                  format="%.4f", key="opc_spot")
+
+    legs_default = pd.DataFrame([
+        {"Buy/Sell": None, "Maturity": None, "Call/Put": None, "Strike [BRL]": 0.00},
+        {"Buy/Sell": None, "Maturity": None, "Call/Put": None, "Strike [BRL]": 0.00},
+    ])
+
+    legs = st.data_editor(
+        legs_default,
+        num_rows="dynamic",
+        hide_index=True,
+        use_container_width=True,
+        key="opc_legs",
+        column_config={
+            "Buy/Sell":     st.column_config.SelectboxColumn(options=["Buy", "Sell"], required=True),
+            "Maturity":     st.column_config.SelectboxColumn(
+                                options=["SU6", "SN6", "SX6", "SF7", "SH7", "SK7", "SN7"], required=True),
+            "Call/Put":     st.column_config.SelectboxColumn(options=["Call", "Put"], required=True),
+            "Strike [BRL]": st.column_config.NumberColumn(format="%.2f", min_value=0.0),
+        },
+    )
+
+    # ── Preço + spread → preço final → conversões ──────────────────────
+    with st.container(border=True):
+        st.caption("Custo / conversões")
+
+        tipo_preco = st.radio("Tipo:", ["Custo", "Crédito"],
+                              horizontal=True, key="opc_tipo")
+
+        p1, p2 = st.columns(2)
+        preco_usd  = p1.number_input("Preço (USD)", value=0.0, step=0.01,
+                                     format="%.2f", key="opc_preco")   # nosso custo/crédito
+        spread_usd = p2.number_input("Spread (USD)", value=0.0, step=0.01,
+                                     format="%.2f", key="opc_spread")  # nossa receita
+
+        # Custo soma, Crédito subtrai
+        if tipo_preco == "Custo":
+            preco_final = preco_usd + spread_usd
+        else:
+            preco_final = preco_usd - spread_usd
+
+        # Conversões partem do preço final
+        custo_cbu = preco_final / 50
+        rs_saca   = (custo_cbu / 100) * 2.2046 * spot_ref
+
+        st.metric("Preço final (USD)", f"{preco_final:,.2f}")
+        m1, m2 = st.columns(2)
+        m1.metric("c/bu",    f"{custo_cbu:,.2f}")
+        m2.metric("R$/Saca", f"{rs_saca:.2f}")
+
+    # ── Texto da cotação ───────────────────────────────────────────────
+    st.divider()
+    st.subheader("Texto da cotação")
+
+    if st.button("Gerar Cotação", key="opc_btn"):
+        legs_validos = legs.dropna(subset=["Buy/Sell", "Maturity", "Call/Put"])
+        texto_cot = gerar_cotacao(
+            legs=legs_validos,
+            futures_ref=futures_ref,
+            spot_ref=spot_ref,
+            custo_cbu=custo_cbu,
+            preco_final=preco_final,
+            rs_saca=rs_saca,
+            tipo_preco=tipo_preco,
+        )
+        st.text_area("Copiar cotação:", texto_cot, height=220, key="opc_out")
