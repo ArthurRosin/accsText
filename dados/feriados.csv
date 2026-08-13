@@ -11,10 +11,12 @@ data,mercado,descricao
 2026-09-07,AMBOS,Labor Day / Independência do Brasil
 2026-10-12,B3,N. Sra. Aparecida
 2026-11-02,B3,Finados
-2026-11-20,,Consciência Negra Desconsiderando pois no pricing tool parace não considerar
+2026-11-20,B3,Consciência Negra
 2026-11-26,CBOT,Thanksgiving
+2026-12-24,B3,Vespera Natal
 2026-12-25,AMBOS,Natal
-2027-01-01,AMBOS,Ano Novo
+2026-12-31,B3,Vespera ano novo
+2027-01-01,AMBOS,Ano Novo 
 2027-01-18,CBOT,MLK Day
 2027-02-08,B3,Carnaval
 2027-02-09,B3,Carnaval
