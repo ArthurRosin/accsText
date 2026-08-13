@@ -172,7 +172,10 @@ def gerar_texto(
         sufixo_2x = ""
 
     # ── Cabeçalho
-    cabecalho_base = f"{commodity} — {pilar} @ {preco_base} {u} — Exp. {vencimento} ({pregoes} Pregões)"
+    if pilar:
+        cabecalho_base = f"{commodity} — {pilar} @ {preco_base} {u} — Exp. {vencimento} ({pregoes} Pregões)"
+    else:
+        cabecalho_base = f"{commodity} @ {preco_base} {u} — Exp. {vencimento} ({pregoes} Pregões)"
     if confirmacao:
         primeira_linha = f"*Confirmação de ordem*\n*{lotes:g} Lotes {cabecalho_base}*"
     else:
@@ -203,47 +206,64 @@ def gerar_texto(
 
     # Faixa central entre melhorado e o cap (KO ou Suspensão): 1x
     if tem_ko or tem_sus:
-        limite = nivel_ko if tem_ko else nivel_suspensao
-        linhas.append(
-            f"- Todo dia em que o mercado fechar entre {nivel_melhorado} e {limite} {u}, "
-            f"{op_lower} 1x{sufixo_1x} o volume diário a {preco_normal} {u}."
-        )
+        if commodity == "FX":
+            limite = nivel_ko
+            linhas.append(
+                f"- Todo dia em que a PTAX fechar entre {nivel_melhorado} e {limite} {u}, "
+                f"{op_lower} 1x{sufixo_1x} o montante diário a {preco_normal} {u}."
+            )
+        else:
+            limite = nivel_ko if tem_ko else nivel_suspensao
+            linhas.append(
+                f"- Todo dia em que o mercado fechar entre {nivel_melhorado} e {limite} {u}, "
+                f"{op_lower} 1x{sufixo_1x} o volume diário a {preco_normal} {u}."
+            )
 
     # Lado desfavorável ao cliente — dispara o dobro (2x) ou a acumulação normal (1x)
     if not tem_prot:
         multiplicador = "2x" if dobro_diario else "1x"
-        sufixo_multi   = sufixo_2x if dobro_diario else sufixo_1x
-        linhas.append(
-            f"- Todo dia em que o mercado fechar a {nivel_melhorado} {u} ou {lado_desfavoravel}, "
-            f"{op_lower} {multiplicador}{sufixo_multi} o volume diário a {nivel_melhorado} {u}."
-        )
+        sufixo_multi  = sufixo_2x if dobro_diario else sufixo_1x
+        if commodity == "FX":
+            linhas.append(
+                f"- Todo dia em que a PTAX fechar a {nivel_melhorado} {u} ou {lado_desfavoravel}, "
+                f"{op_lower} {multiplicador}{sufixo_multi} o montante diário a {nivel_melhorado} {u}."
+            )
+        else:
+            linhas.append(
+                f"- Todo dia em que o mercado fechar a {nivel_melhorado} {u} ou {lado_desfavoravel}, "
+                f"{op_lower} {multiplicador}{sufixo_multi} o volume diário a {nivel_melhorado} {u}."
+            )
     else:
-        multiplicador = "1x"
-        sufixo_multi   = sufixo_1x
         linhas.append(
             f"- Todo dia em que o mercado fechar entre {nivel_melhorado} e {nivel_protecao} {u}, "
-            f"{op_lower} {multiplicador}{sufixo_multi} o volume diário a {nivel_melhorado} {u}."
+            f"{op_lower} 1x{sufixo_1x} o volume diário a {nivel_melhorado} {u}."
         )
 
     # ── Proteção de dobro ────────────────────────────────────────────────────────
     if tem_prot:
-            linhas.append(
-                f"- Todo dia em que o mercado fechar a {nivel_protecao} {u} ou {lado_desfavoravel}, "
-                f"{op_lower} 2x{sufixo_2x} o volume diário a {nivel_melhorado} {u}."
-            )
+        linhas.append(
+            f"- Todo dia em que o mercado fechar a {nivel_protecao} {u} ou {lado_desfavoravel}, "
+            f"{op_lower} 2x{sufixo_2x} o volume diário a {nivel_melhorado} {u}."
+        )
 
     # ── Knock Out ────────────────────────────────────────────────────────
     if tem_ko:
-        lotes_restantes = (
-            f", e o restante dos lotes são {op_flex} a {nivel_paraquedas} {u}"
-            if tem_par else ""
-        )
-        linhas.append(
-            f"- Se, em qualquer momento, o mercado tocar {nivel_ko} {u}, o acumulador desmonta. "
-            f"Os lotes {op_flex} a {nivel_melhorado}"
-            + (f" e {preco_acel}" if tem_acel else "")
-            + f" {u} permanecem{lotes_restantes}."
-        )
+        if commodity == "FX":
+            linhas.append(
+                f"- Se, em qualquer momento, a PTAX tocar {nivel_ko} {u}, o acumulador desmonta. "
+                f"Os lotes {op_flex} a {nivel_melhorado} {u} permanecem."
+            )
+        else:
+            lotes_restantes = (
+                f", e o restante dos lotes são {op_flex} a {nivel_paraquedas} {u}"
+                if tem_par else ""
+            )
+            linhas.append(
+                f"- Se, em qualquer momento, o mercado tocar {nivel_ko} {u}, o acumulador desmonta. "
+                f"Os lotes {op_flex} a {nivel_melhorado}"
+                + (f" e {preco_acel}" if tem_acel else "")
+                + f" {u} permanecem{lotes_restantes}."
+            )
 
     # ── Suspensão ────────────────────────────────────────────────────────
     if tem_sus:
@@ -304,6 +324,18 @@ def gerar_cotacao(
     return "\n".join(linhas)
 
 
+# ── Diálogo de confirmação ───────────────────────────────────────────────────
+@st.dialog("Confirmar estrutura")
+def confirmar_estrutura(resumo: str):
+    st.markdown(resumo)
+    c1, c2 = st.columns(2)
+    if c1.button("Confirmar", type="primary", width="stretch"):
+        st.session_state["gerar_confirmado"] = True
+        st.rerun()
+    if c2.button("Cancelar", width="stretch"):
+        st.rerun()
+
+
 # ── UI ──────────────────────────────────────────────────────────────────────
 st.title("Gerador de Acumuladores")
 
@@ -336,13 +368,23 @@ with tab_gerador:
     calendario = info_commodity["calendario"]
 
     st.subheader("Escolha o tipo de acumulador")
-    opcao = st.selectbox("Tipo:", list(TIPOS_ACC.keys()))
+    if commodity == "FX":
+        opcao = "ACC com dobro diário e KO"
+        st.write(f"Tipo: {opcao}")
+    else:
+        opcao = st.selectbox("Tipo:", list(TIPOS_ACC.keys()))
+
     st.divider()
 
     tipo_operacao = st.radio("Compra ou Venda?", ["Compra", "Venda"])
 
-    pilar = st.selectbox("Pilar:", list(pilares.keys()))
-    vencimento = pilares[pilar]
+    if commodity == "FX":
+        vencimento = st.date_input("Vencimento:")
+        pilar = ""                      # FX não tem pilar — cliente escolhe a data
+    else:
+        pilar = st.selectbox("Pilar:", list(pilares.keys()))
+        vencimento = pilares[pilar]
+
     hoje = date.today()
     pregoes = contar_pregoes(hoje, vencimento, calendario)
     st.write(f"Vencimento: {vencimento}")
@@ -360,8 +402,28 @@ with tab_gerador:
     nivel_acelerador = st.number_input(f"Nível do Acelerador ({unidade}):", value=0.0, min_value=0.0) if tem_acel else None
     nivel_protecao   = st.number_input(f"Nível de Proteção de Dobro ({unidade}):", value=0.0, min_value=0.0) if tem_prot else None
 
-    # ── Geração
+    # ── Geração (com confirmação)
     if st.button("Gerar Texto"):
+        resumo = (
+            f"Você selecionou um **acumulador de {tipo_operacao.lower()}**.\n\n"
+            f"- **Estrutura:** {opcao}\n"
+            f"- **Commodity:** {commodity}"
+            + (f" · **Pilar:** {pilar}" if pilar else "")
+            + f"\n- **Vencimento:** {vencimento} ({pregoes} pregões)\n"
+            f"- **Nível melhorado:** {nivel_melhorado} {unidade}"
+        )
+        extras = []
+        if nivel_ko is not None:         extras.append(f"KO {nivel_ko}")
+        if nivel_paraquedas is not None: extras.append(f"Paraquedas {nivel_paraquedas}")
+        if nivel_suspensao is not None:  extras.append(f"Suspensão {nivel_suspensao}")
+        if nivel_acelerador is not None: extras.append(f"Acelerador {nivel_acelerador}")
+        if nivel_protecao is not None:   extras.append(f"Proteção {nivel_protecao}")
+        if extras:
+            resumo += f"\n- **Níveis:** " + " · ".join(extras) + f" {unidade}"
+        confirmar_estrutura(resumo)
+
+    if st.session_state.get("gerar_confirmado"):
+        st.session_state["gerar_confirmado"] = False
         texto = gerar_texto(
             opcao=opcao,
             tipo_operacao=tipo_operacao,
@@ -405,7 +467,7 @@ with tab_calc:
         legs_default,
         num_rows="dynamic",
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
         key="opc_legs",
         column_config={
             "Buy/Sell":     st.column_config.SelectboxColumn(options=["Buy", "Sell"], required=True),
