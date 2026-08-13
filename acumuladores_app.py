@@ -251,7 +251,7 @@ def gerar_texto(
         if commodity == "FX":
             linhas.append(
                 f"- Se, em qualquer momento, a PTAX tocar {nivel_ko} {u}, o acumulador desmonta. "
-                f"Os lotes {op_flex} a {nivel_melhorado} {u} permanecem."
+                f"O montante {op_flex} a {nivel_melhorado} {u} permanecem."
             )
         else:
             lotes_restantes = (
